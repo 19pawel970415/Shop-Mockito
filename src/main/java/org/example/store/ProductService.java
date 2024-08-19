@@ -2,6 +2,7 @@ package org.example.store;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class ProductService {
 
@@ -34,17 +35,23 @@ public class ProductService {
         }
     }
 
-    public void updateProduct(Long id, Product newProduct) {
-        if (productRepository.findById(id).isPresent()) {
-            if (productValidator.isProductValid(newProduct)) {
-                productRepository.addProduct(newProduct); // Assuming update is done by adding a new product
+    public void updateProductPrice(Long id, double newPrice) {
+        Optional<Product> existingProductOptional = productRepository.findById(id);
+
+        if (existingProductOptional.isPresent()) {
+            Product existingProduct = existingProductOptional.get();
+
+            if (newPrice > 0) {
+                existingProduct.setPrice(newPrice);
+                productRepository.addProduct(existingProduct);
             } else {
-                throw new IllegalArgumentException("Product is invalid");
+                throw new IllegalArgumentException("Price must be greater than 0");
             }
         } else {
-            throw new NoSuchElementException("Cannot update non-existent product");
+            throw new NoSuchElementException("Cannot update price of non-existent product");
         }
     }
+
 
     public List<Product> getAllProducts() {
         // Assuming productRepository has a method to get all products
