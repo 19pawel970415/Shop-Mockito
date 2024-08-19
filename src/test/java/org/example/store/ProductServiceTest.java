@@ -2,9 +2,7 @@ package org.example.store;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -12,7 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -33,7 +31,10 @@ class ProductServiceTest {
     private ProductValidator productValidator;
 
     @InjectMocks
-    ProductService productService;
+    private ProductService productService;
+
+    @Captor
+    private ArgumentCaptor<Product> productCaptor;
 
     @Test
     void shouldGetProductExistingInRepoById() {
@@ -113,7 +114,62 @@ class ProductServiceTest {
     }
 
     @Test
-    void updateProduct() {
+    void shouldNotUpdateNonExistentProduct() {
+        when(productRepository.findById(NONEXISTENT_ID)).thenReturn(Optional.empty());
+
+        NoSuchElementException actualNoSuchElementException = assertThrows(NoSuchElementException.class, () -> productService.updateProductPrice(NONEXISTENT_ID, 111.1));
+        assertThat(actualNoSuchElementException)
+                .hasMessage("Cannot update price of non-existent product")
+                .hasNoCause();
+        verify(productRepository).findById(NONEXISTENT_ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void shouldNotUpdateExistingProductWithPriceSmallerThanZero() {
+        when(productRepository.findById(ID)).thenReturn(Optional.of(PRODUCT));
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> productService.updateProductPrice(ID, -0.1))
+                .withMessage("Price must be greater than 0")
+                .withNoCause();
+        verify(productRepository).findById(ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void shouldNotUpdateExistingProductWithPriceEqualToZero() {
+        when(productRepository.findById(ID_2)).thenReturn(Optional.of(PRODUCT_2));
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> productService.updateProductPrice(ID_2, 0))
+                .withMessage("Price must be greater than 0")
+                .withNoCause();
+        verify(productRepository).findById(ID_2);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void shouldUpdateExistingProductWithPriceGreaterThanZero() {
+        when(productRepository.findById(ID)).thenReturn(Optional.of(PRODUCT));
+
+        productService.updateProductPrice(ID, 0.1);
+
+        InOrder inOrder = inOrder(productRepository);
+        inOrder.verify(productRepository).findById(ID);
+        inOrder.verify(productRepository).addProduct(productCaptor.capture());
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+        Product capturedProduct = productCaptor.getValue();
+        assertAll(
+                () -> assertEquals(capturedProduct.getId(), PRODUCT.getId()),
+                () -> assertEquals(capturedProduct.getName(), PRODUCT.getName()),
+                () -> assertEquals(capturedProduct.getPrice(), 0.1)
+                );
+
     }
 
     @Test
