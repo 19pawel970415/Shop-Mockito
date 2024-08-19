@@ -20,10 +20,14 @@ public class ProductService {
     }
 
     public void addProduct(Product product) {
-        if (productValidator.isProductValid(product)) {
-            productRepository.addProduct(product);
+        if (productRepository.findById(product.getId()).isEmpty()) {
+            if (productValidator.isProductValid(product)) {
+                productRepository.addProduct(product);
+            } else {
+                throw new IllegalArgumentException("Product is invalid");
+            }
         } else {
-            throw new IllegalArgumentException("Product is invalid");
+            throw new IllegalArgumentException("Product already in repository");
         }
     }
 
@@ -56,17 +60,5 @@ public class ProductService {
     public List<Product> getAllProducts() {
         // Assuming productRepository has a method to get all products
         return productRepository.findAll();
-    }
-
-    public void addProductIfNotExists(Product product) {
-        if (productRepository.findById(product.getId()).isEmpty()) {
-            if (productValidator.isProductValid(product)) {
-                productRepository.addProduct(product);
-            } else {
-                throw new IllegalArgumentException("Product is invalid");
-            }
-        } else {
-            throw new IllegalArgumentException("Product already exists");
-        }
     }
 }
