@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -20,8 +21,10 @@ class ProductServiceTest {
 
     private static final Long ID = 1L;
     private static final Long NONEXISTENT_ID = 0L;
+    private static final Long ID_2 = 2L;
     private static final Product PRODUCT = new Product(ID, "Bitcoin ZenGo wallet", 299.99);
     private static final Product INVALID_PRODUCT = new Product(NONEXISTENT_ID, "", 0.0);
+    private static final Product PRODUCT_2 = new Product(ID_2, "ETH pendent", 39.99);
 
     @Mock
     private ProductRepository productRepository;
@@ -105,6 +108,39 @@ class ProductServiceTest {
                 .withMessage("Cannot delete non-existent product")
                 .withNoCause();
         verify(productRepository).findById(NONEXISTENT_ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void updateProduct() {
+    }
+
+    @Test
+    void shouldGetEmptyListWhenNoProductsInRepository() {
+        when(productRepository.findAll()).thenReturn(List.of());
+
+        List<Product> actualAllProducts = productService.getAllProducts();
+
+        assertThat(actualAllProducts)
+                .isEmpty();
+        verify(productRepository).findAll();
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void shouldGetAListOfAllProductsInRepository() {
+        when(productRepository.findAll()).thenReturn(List.of(PRODUCT, PRODUCT_2));
+
+        List<Product> actualAllProducts = productService.getAllProducts();
+
+        assertThat(actualAllProducts)
+                .isNotEmpty()
+                .hasSize(2)
+                .containsExactly(PRODUCT, PRODUCT_2);
+
+        verify(productRepository).findAll();
         verifyNoMoreInteractions(productRepository);
         verifyNoInteractions(productValidator);
     }
