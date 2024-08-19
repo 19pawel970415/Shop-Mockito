@@ -62,28 +62,43 @@ class ProductServiceTest {
     }
 
     @Test
-    void shouldAddValidProduct() {
+    void shouldAddValidNewProduct() {
+        when(productRepository.findById(PRODUCT.getId())).thenReturn(Optional.empty());
         when(productValidator.isProductValid(PRODUCT)).thenReturn(true);
-        // doNothing().when(productRepository).addProduct(PRODUCT); - optional, Mockito does nothing with it anyway
+        doNothing().when(productRepository).addProduct(PRODUCT); // - optional, Mockito does nothing with it anyway
 
         productService.addProduct(PRODUCT);
 
+        InOrder inOrder = inOrder(productRepository);
+        inOrder.verify(productRepository).findById(ID);
         verify(productValidator).isProductValid(PRODUCT);
-        verify(productRepository).addProduct(PRODUCT);
+        inOrder.verify(productRepository).addProduct(PRODUCT);
         verifyNoMoreInteractions(productValidator, productRepository);
     }
 
     @Test
-    void shouldNotAddInvalidProductAndThrowIllegalArgumentException() {
-        when(productValidator.isProductValid(INVALID_PRODUCT)).thenReturn(false);
+    void shouldNotAddExistingProduct() {
+        when(productRepository.findById(PRODUCT.getId())).thenReturn(Optional.of(PRODUCT));
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> productService.addProduct(INVALID_PRODUCT))
+                .isThrownBy(() -> productService.addProduct(PRODUCT))
+                .withMessage("Product already in repository")
+                .withNoCause();
+        verify(productRepository).findById(ID);
+        verifyNoInteractions(productValidator);
+    }
+
+    @Test
+    void shouldNotAddNewInvalidProduct() {
+        when(productRepository.findById(PRODUCT.getId())).thenReturn(Optional.empty());
+        when(productValidator.isProductValid(PRODUCT)).thenReturn(false);
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> productService.addProduct(PRODUCT))
                 .withMessage("Product is invalid")
                 .withNoCause();
-        verify(productValidator).isProductValid(INVALID_PRODUCT);
-        verifyNoMoreInteractions(productValidator);
-        verifyNoInteractions(productRepository);
+        verify(productRepository).findById(ID);
+        verify(productValidator).isProductValid(PRODUCT);
     }
 
     @Test
