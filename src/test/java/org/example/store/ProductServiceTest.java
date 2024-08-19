@@ -6,6 +6,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
@@ -23,6 +29,14 @@ class ProductServiceTest {
 
     @Test
     void shouldGetProductExistingInRepoById() {
+        when(productRepository.findById(ID)).thenReturn(Optional.of(PRODUCT));
+
+        Product actualProductById = productService.getProductById(ID);
+
+        assertEquals(PRODUCT, actualProductById);
+        verify(productRepository).findById(ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
     }
 
     @Test
