@@ -6,8 +6,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -16,6 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class ProductServiceTest {
 
     private static final Long ID = 1L;
+    private static final Long NONEXISTENT_ID = 0L;
     private static final Product PRODUCT = new Product(ID, "Bitcoin ZenGo wallet", 299.99);
 
     @Mock
@@ -41,6 +44,15 @@ class ProductServiceTest {
 
     @Test
     void shouldNotGetProductNotExistingInRepoByIdAndThrowNoSuchElementException() {
+        when(productRepository.findById(NONEXISTENT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.getProductById(NONEXISTENT_ID))
+                .isExactlyInstanceOf(NoSuchElementException.class)
+                .hasMessage("Product not found")
+                .hasNoCause();
+        verify(productRepository).findById(NONEXISTENT_ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
     }
 
     @Test
