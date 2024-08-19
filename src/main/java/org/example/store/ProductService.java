@@ -17,9 +17,10 @@ public class ProductService {
                 .orElseThrow(() -> new NoSuchElementException("Product not found"));
     }
 
-    public Product addProduct(Product product) {
+    public void addProduct(Product product) {
         if (productValidator.isProductValid(product)) {
-            return productRepository.addProduct(product);
+            productRepository.addProduct(product);
+            return;
         }
         throw new IllegalArgumentException("Product is invalid");
     }
