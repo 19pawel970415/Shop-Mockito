@@ -84,9 +84,28 @@ class ProductServiceTest {
 
     @Test
     void shouldDeleteProductExistingInRepoById() {
+        when(productRepository.findById(ID)).thenReturn(Optional.of(PRODUCT));
+        doNothing().when(productRepository).deleteProduct(ID);
+
+        productService.deleteProduct(ID);
+
+        final InOrder inOrder = inOrder(productRepository);
+        inOrder.verify(productRepository).findById(ID);
+        inOrder.verify(productRepository).deleteProduct(ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
     }
 
     @Test
     void shouldNotDeleteProductNotExistingInRepoByIdAndThrowNoSuchElementException() {
+        when(productRepository.findById(NONEXISTENT_ID)).thenReturn(Optional.empty());
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+                .isThrownBy(() -> productService.deleteProduct(NONEXISTENT_ID))
+                .withMessage("Cannot delete non-existent product")
+                .withNoCause();
+        verify(productRepository).findById(NONEXISTENT_ID);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(productValidator);
     }
 }
